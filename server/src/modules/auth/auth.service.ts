@@ -3,7 +3,6 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
-  Inject,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -12,7 +11,6 @@ import { Repository } from "typeorm";
 import { User } from "src/shared/entities/user-entity";
 import { UserRole, UserStatus } from "src/shared/enums/user-enums";
 import { SecretUtils } from "src/shared/utils/secret-utils";
-import { I18nService, I18nContext } from "nestjs-i18n"; // Updated: Ensure I18nContext is imported
 import { MailService } from "../mail/mail.service";
 import { randomBytes } from "crypto";
 import { InjectRedis } from "@nestjs-modules/ioredis";
@@ -30,13 +28,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly mailService: MailService,
     @InjectRedis() private readonly redis: Redis,
-    private readonly i18n: I18nService,
   ) {}
-
-  // Helper method to get current lang (reusable)
-  private getCurrentLang(): string {
-    return I18nContext.current<I18nContext>()?.lang || "en";
-  }
 
   async login(dto: LoginDto): Promise<{
     accessToken: string;
@@ -89,11 +81,7 @@ export class AuthService {
 
       // Check if it's a refresh token
       if (payload.type !== "refresh") {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.invalid_token_type", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Invaid token type");
       }
 
       // Get user
@@ -111,39 +99,23 @@ export class AuthService {
       );
 
       if (!isValidToken) {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.token_revoked", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Token revoked");
       }
 
       // Verify token version matches current user state
       // This allows us to invalidate all refresh tokens if needed
       if (payload.version !== user.activity?.loginCount) {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.token_invalidated", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Token invalidated");
       }
 
       // Check user account status
       if (user.status !== UserStatus.ACTIVE) {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.account_not_active", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Your account is not active");
       }
 
       // Check user role hasn't changed
       if (payload.role !== user.role) {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.role_changed", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Your role has changed");
       }
 
       // Generate new access token only (refresh token remains valid)
@@ -168,11 +140,7 @@ export class AuthService {
 
       return { accessToken };
     } catch (error) {
-      throw new UnauthorizedException(
-        this.i18n.t("auth.errors.invalid_refresh_token", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new UnauthorizedException("Invalid refresh token");
     }
   }
 
@@ -189,20 +157,12 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.email_already_exists", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("Email already exits");
     }
 
     // Validate terms acceptance
     if (!dto.acceptTerms) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.terms_not_accepted", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("Terms not accepted");
     }
 
     // Hash password
@@ -244,9 +204,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.registration", {
-        lang: this.getCurrentLang(),
-      }),
+      message: "Registration complete, verify your email",
       userId: user.id,
     };
   }
@@ -260,20 +218,12 @@ export class AuthService {
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.user_not_found", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("User not found");
     }
 
     // Check if already verified
     if (user.isEmailVerified) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.email_already_verified", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("Email already verified");
     }
 
     return this.mailService.sendEmailVerification(email, user.id);
@@ -314,9 +264,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.email_verified", {
-        lang: this.getCurrentLang(),
-      }),
+      message: `${email} is now verified`,
     };
   }
 
@@ -329,11 +277,7 @@ export class AuthService {
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.user_not_found", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("User not found");
     }
 
     return this.mailService.sendPasswordReset(email, user.id);
@@ -377,9 +321,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset_otp_verified", {
-        lang: this.getCurrentLang(),
-      }),
+      message: "OTP verified! You can now reset your password",
       resetToken,
     };
   }
@@ -398,18 +340,12 @@ export class AuthService {
     const resetKey = `reset_token:${email}:${resetToken}`;
     const resetTokenData = await this.redis.get(resetKey);
     if (!resetTokenData) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.invalid_reset_token", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("Invalid or expired reset token");
     }
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset_token_verified", {
-        lang: this.getCurrentLang(),
-      }),
+      message: "Reset token verified successfully",
     };
   }
 
@@ -428,11 +364,7 @@ export class AuthService {
     const resetKey = `reset_token:${email}:${resetToken}`;
     const resetTokenData = await this.redis.get(resetKey);
     if (!resetTokenData) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.invalid_reset_token", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("Invalid or expired reset token");
     }
 
     // Hash the password
@@ -456,9 +388,7 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset", {
-        lang: this.getCurrentLang(),
-      }),
+      message: "Password reset successfully",
     };
   }
 
@@ -473,11 +403,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new BadRequestException(
-        this.i18n.t("auth.errors.user_not_found", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new BadRequestException("User not found");
     }
 
     return this.mailService.sendPasswordReset(email, user.id);
@@ -489,53 +415,37 @@ export class AuthService {
   ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new UnauthorizedException(
-        this.i18n.t("auth.errors.invalid_credentials", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     // Check account status
     if (user.status !== UserStatus.ACTIVE) {
       if (user.status === UserStatus.PENDING) {
         throw new ForbiddenException(
-          this.i18n.t("auth.errors.email_verification_required", {
-            lang: this.getCurrentLang(),
-          }),
+          "Please verify your email address before logging in",
         );
       }
       if (user.status === UserStatus.SUSPENDED) {
         throw new ForbiddenException(
-          this.i18n.t("auth.errors.account_suspended", {
-            lang: this.getCurrentLang(),
-          }),
+          "Your account has been suspended. Please contact support",
         );
       }
       if (user.status === UserStatus.DELETED) {
-        throw new UnauthorizedException(
-          this.i18n.t("auth.errors.invalid_credentials", {
-            lang: this.getCurrentLang(),
-          }),
-        );
+        throw new UnauthorizedException("Invalid email or password");
       }
     }
 
     // Check email verification
     if (!user.isEmailVerified) {
       throw new ForbiddenException(
-        this.i18n.t("auth.errors.email_verification_required", {
-          lang: this.getCurrentLang(),
-        }),
+        "Please verify your email address before logging in",
       );
     }
 
     // Check account lockout
     if (user.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {
       throw new ForbiddenException(
-        this.i18n.t("auth.errors.account_locked", {
-          lang: this.getCurrentLang(),
-        }),
+        "Account is temporarily locked due to too many failed login attempts",
       );
     }
 
@@ -543,11 +453,7 @@ export class AuthService {
     if (!isValid) {
       // Increment failed login attempts
       await this.handleFailedLogin(user);
-      throw new UnauthorizedException(
-        this.i18n.t("auth.errors.invalid_credentials", {
-          lang: this.getCurrentLang(),
-        }),
-      );
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     // Reset lockout on successful login

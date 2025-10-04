@@ -14,13 +14,6 @@ import uploadConfig from "./config/upload-config";
 import cloudinaryConfig from "./config/cloudinary-config";
 import { BullModule } from "@nestjs/bull";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import {
-  I18nModule,
-  I18nJsonLoader,
-  QueryResolver,
-  AcceptLanguageResolver,
-} from "nestjs-i18n";
-import { join } from "path";
 import { Address } from "./shared/entities/address-entity";
 import { BankAccount } from "./shared/entities/bank-account-entity";
 import { Cart } from "./shared/entities/cart-entity";
@@ -57,18 +50,6 @@ import bullConfig from "./config/bull-config";
 
 @Module({
   imports: [
-    I18nModule.forRoot({
-      fallbackLanguage: "en",
-      loaderOptions: {
-        path: join(__dirname, "./i18n/"),
-        watch: true,
-      },
-      resolvers: [
-        { use: QueryResolver, options: ["lang", "locale"] },
-        AcceptLanguageResolver,
-      ],
-      typesOutputPath: join(__dirname, "..", "src/generated/i18n.generated.ts"),
-    }),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [
