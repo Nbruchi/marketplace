@@ -1,0 +1,8 @@
+export enum PolicyType {
+  RETURN = "RETURN",
+  SHIPPING = "SHIPPING",
+  PRIVACY = "PRIVACY",
+  TERMS = "TERMS",
+  REFUND = "REFUND",
+  WARRANTY = "WARRANTY",
+}

@@ -1,0 +1,12 @@
+export enum CouponType {
+  PUBLIC = "PUBLIC",
+  PRIVATE = "PRIVATE",
+  FIRST_ORDER = "FIRST_ORDER",
+  LOYALTY = "LOYALTY",
+}
+
+export enum DiscountType {
+  PERCENTAGE = "PERCENTAGE",
+  FIXED_AMOUNT = "FIXED_AMOUNT",
+  FREE_SHIPPING = "FREE_SHIPPING",
+}

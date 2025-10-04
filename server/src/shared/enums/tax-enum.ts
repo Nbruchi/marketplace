@@ -1,0 +1,18 @@
+export enum TaxType {
+  VAT = "VAT",
+  GST = "GST",
+  SALES_TAX = "SALES_TAX",
+  INCOME_TAX = "INCOME_TAX",
+  WITHHOLDING_TAX = "WITHHOLDING_TAX",
+  OTHER = "OTHER",
+}
+
+export enum TaxRegion {
+  NATIONAL = "NATIONAL",
+  STATE = "STATE",
+  PROVINCE = "PROVINCE",
+  COUNTY = "COUNTY",
+  CITY = "CITY",
+  MUNICIPAL = "MUNICIPAL",
+  SPECIAL = "SPECIAL",
+}

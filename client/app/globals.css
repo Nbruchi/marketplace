@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 48 100% 50%;
+    --radius: 0.5rem;
+
+    /* Amazon specific colors */
+    --amazon-orange: 36 100% 50%;
+    --amazon-blue: 214 85% 19%;
+    --amazon-light-blue: 199 100% 33%;
+    --amazon-yellow: 48 100% 50%;
+    --amazon-dark-gray: 0 0% 15%;
+    --amazon-light-gray: 0 0% 95%;
+    --amazon-green: 145 63% 42%;
+    --amazon-red: 0 100% 50%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 48 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Amazon specific styles */
+.amazon-button-primary {
+  @apply bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium py-1 px-4 rounded-full border border-[#FCD200] shadow-sm;
+}
+
+.amazon-button-secondary {
+  @apply bg-[#FFA41C] hover:bg-[#FA8900] text-black font-medium py-1 px-4 rounded-full border border-[#FF8F00] shadow-sm;
+}
+
+.amazon-button-buy {
+  @apply bg-[#FFD814] hover:bg-[#F7CA00] text-black font-medium py-2 px-4 rounded-md border border-[#FCD200] shadow-sm;
+}
+
+.amazon-button-add {
+  @apply bg-[#FFA41C] hover:bg-[#FA8900] text-black font-medium py-2 px-4 rounded-md border border-[#FF8F00] shadow-sm;
+}
+
+.amazon-link {
+  @apply text-[#007185] hover:text-[#C7511F] hover:underline cursor-pointer;
+}
+
+.amazon-section {
+  @apply bg-white dark:bg-gray-800 rounded-md shadow-sm p-4 mb-4;
+}
+
+.amazon-card {
+  @apply bg-white dark:bg-gray-800 rounded-md shadow-sm p-4 h-full;
+}
+
+.amazon-navbar {
+  @apply bg-[#131921] text-white;
+}
+
+.amazon-navbar-secondary {
+  @apply bg-[#232F3E] text-white;
+}
+
+.amazon-footer-top {
+  @apply bg-[#232F3E] text-white py-8;
+}
+
+.amazon-footer-middle {
+  @apply bg-[#131A22] text-white py-8;
+}
+
+.amazon-footer-bottom {
+  @apply bg-[#0F1111] text-white py-4;
+}
+
+.prime-badge {
+  @apply text-xs text-[#002F36] bg-[#CCF0FE] px-1.5 py-0.5 rounded-sm font-medium;
+}
+
+.amazon-rating {
+  @apply flex items-center;
+}
+
+.amazon-rating-stars {
+  @apply text-[#FFA41C];
+}
+
+.amazon-price {
+  @apply text-lg font-medium;
+}
+
+.amazon-price-symbol {
+  @apply text-sm align-top;
+}
+
+.amazon-price-fraction {
+  @apply text-sm align-top;
+}
+
+.amazon-price-save {
+  @apply text-[#CC0C39];
+}
+
+.amazon-price-was {
+  @apply text-gray-500 line-through;
+}
+
+.amazon-dropdown {
+  @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg;
+}
+
+.amazon-input {
+  @apply border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF9900];
+}
+
+.amazon-checkbox {
+  @apply h-4 w-4 rounded border-gray-300 text-[#FF9900] focus:ring-[#FF9900];
+}
+
+.amazon-radio {
+  @apply h-4 w-4 border-gray-300 text-[#FF9900] focus:ring-[#FF9900];
+}
+
+.amazon-select {
+  @apply border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF9900];
+}
+
+.amazon-textarea {
+  @apply border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FF9900];
+}
+
+.amazon-badge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.amazon-badge-prime {
+  @apply bg-[#CCF0FE] text-[#002F36];
+}
+
+.amazon-badge-limited {
+  @apply bg-[#FFE8B8] text-[#A75700];
+}
+
+.amazon-badge-deal {
+  @apply bg-[#CC0C39] text-white;
+}
+
+.amazon-badge-bestseller {
+  @apply bg-[#F08804] text-white;
+}
+
+.amazon-badge-choice {
+  @apply bg-[#002F36] text-white;
+}
+
+.amazon-badge-new {
+  @apply bg-[#3E8E3E] text-white;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

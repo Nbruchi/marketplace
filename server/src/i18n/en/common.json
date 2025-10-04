@@ -1,0 +1,33 @@
+{
+  "greeting": "Hello",
+  "errors": {
+    "forbidden": "You do not have permission to perform this action.",
+    "notFound": "The requested resource was not found."
+  },
+  "auth": {
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "email_verification_required": "Please verify your email address before logging in",
+      "account_suspended": "Your account has been suspended. Please contact support",
+      "account_locked": "Account is temporarily locked due to too many failed login attempts",
+      "user_not_found": "User not found",
+      "email_already_exists": "Email address is already registered",
+      "terms_not_accepted": "You must accept the Terms and Conditions",
+      "email_already_verified": "Email address is already verified",
+      "invalid_reset_token": "Invalid or expired reset token"
+    },
+    "success": {
+      "registration_complete": "Registration successful! Please verify your email",
+      "email_verified": "Email verified successfully! Welcome email sent",
+      "password_reset": "Password reset successfully",
+      "password_reset_otp_verified": "OTP verified! You can now reset your password",
+      "password_reset_token_verified": "Reset token verified successfully"
+    }
+  },
+  "validation": {
+    "isNotEmpty": "$property should not be empty",
+    "isEmail": "$property must be a valid email address",
+    "minLength": "$property must be at least $constraint1 characters long",
+    "maxLength": "$property must be at most $constraint1 characters long"
+  }
+}

@@ -1,0 +1,6 @@
+export enum CartStatus {
+  ACTIVE = "ACTIVE",
+  ABANDONED = "ABANDONED",
+  CONVERTED_TO_ORDER = "CONVERTED_TO_ORDER",
+  EXPIRED = "EXPIRED",
+}

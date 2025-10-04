@@ -1,0 +1,23 @@
+export enum ZoneType {
+  COUNTRY = "COUNTRY",
+  STATE = "STATE",
+  POSTAL_CODE = "POSTAL_CODE",
+  CONTINENTAL = "CONTINENTAL",
+  WORLDWIDE = "WORLDWIDE",
+}
+
+export enum RateType {
+  FLAT = "FLAT",
+  WEIGHT_BASED = "WEIGHT_BASED",
+  PRICE_BASED = "PRICE_BASED",
+  FREE = "FREE",
+}
+
+export enum ShippingMethodType {
+  STANDARD = "STANDARD",
+  EXPRESS = "EXPRESS",
+  SAME_DAY = "SAME_DAY",
+  NEXT_DAY = "NEXT_DAY",
+  INTERNATIONAL = "INTERNATIONAL",
+  PICKUP = "PICKUP",
+}
