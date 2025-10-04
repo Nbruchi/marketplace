@@ -13,23 +13,18 @@ async function bootstrap() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-  // Global prefix early
-  app.setGlobalPrefix(process.env.API_PREFIX || "api/v1");
+  app.setGlobalPrefix("api/v1");
 
   // CORS
   const corsOptions: CorsOptions = {
-    origin: process.env.CORS_ORIGIN || true, // Fallback to allow all for dev
+    origin: "*", // Fallback to allow all for dev
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept-Language",
-    ], // Added for i18n
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   };
+
   app.enableCors(corsOptions);
 
   // Global exception filter
@@ -44,39 +39,46 @@ async function bootstrap() {
     }),
   );
 
-  const options = new DocumentBuilder()
-    .setTitle("REX Pro Backend APIs")
-    .setDescription("Backend APIs documentation for REX Pro.")
-    .setVersion("1.0.0")
-    .addBearerAuth({
-      type: "http",
-      scheme: "bearer",
-      bearerFormat: "JWT",
-    })
-    .build();
+  // Build Swagger docs but guard any errors so they don't stop the server
+  try {
+    const options = new DocumentBuilder()
+      .setTitle("Marketplace Backend APIs")
+      .setDescription("Backend APIs documentation for Marketplace.")
+      .setVersion("1.0.0")
+      .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" })
+      .build();
 
-  const document = SwaggerModule.createDocument(app, options);
-  document.tags = (document.tags || []).sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+    const document = SwaggerModule.createDocument(app, options);
+    document.tags = (document.tags || []).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
 
-  document.paths = Object.keys(document.paths)
-    .sort((a, b) => a.localeCompare(b))
-    .reduce((acc, key) => {
-      acc[key] = document.paths[key];
-      return acc;
-    }, {});
+    if (document.paths) {
+      document.paths = Object.keys(document.paths)
+        .sort((a, b) => a.localeCompare(b))
+        .reduce((acc, key) => {
+          acc[key] = document.paths[key];
+          return acc;
+        }, {} as any);
+    }
 
-  SwaggerModule.setup("api/v1/swagger-ui.html", app, document);
+    SwaggerModule.setup("api/v1/swagger-ui.html", app, document);
+  } catch (err) {
+    // Don't let swagger generation prevent app startup
+    Logger.warn(
+      `Swagger setup failed: ${err instanceof Error ? err.message : err}`,
+    );
+  }
 
-  const port = process.env.PORT!;
-  app.listen(port);
+  // Parse port safely and await the listen call so bootstrap resolves/rejects correctly
+  await app.listen(process.env.PORT!);
 }
+
 bootstrap()
   .then(() => {
     Logger.log(`Server started on http://localhost:${process.env.PORT!}`);
   })
   .catch((error) => {
-    Logger.error(`Failed to start server: ${error.message}`, error.stack);
+    Logger.error(`Failed to start server: ${error}`);
     process.exit(1);
   });

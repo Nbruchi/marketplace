@@ -1,13 +1,13 @@
 import { registerAs } from "@nestjs/config";
 
 export default registerAs("app", () => {
-  const defaultDomain = "marketplace.com";
+  const defaultDomain = "http://localhost:6000/api/v1";
   const defaultAppUrl = `https://${defaultDomain}`;
 
   return {
     nodeEnv: process.env.NODE_ENV,
     port: process.env.PORT,
-    apiPrefix: process.env.API_PREFIX,
+    apiPrefix: "/api/v1",
     name: process.env.APP_NAME || "Marketplace",
     url: process.env.APP_URL || defaultAppUrl,
     cors: {
