@@ -16,7 +16,6 @@ async function bootstrap() {
   // Global prefix early
   app.setGlobalPrefix(process.env.API_PREFIX || "api/v1");
 
-
   // CORS
   const corsOptions: CorsOptions = {
     origin: process.env.CORS_ORIGIN || true, // Fallback to allow all for dev
@@ -45,66 +44,37 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger setup (conditional for prod)
-  if (process.env.NODE_ENV !== "production") {
-    const options = new DocumentBuilder()
-      .setTitle("Marketplace Backend APIs")
-      .setDescription(
-        "Backend APIs documentation for Marketplace. Supports English (en) and Kinyarwanda (rw).",
-      )
-      .setVersion("1.0.0")
-      .addBearerAuth(
-        {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          name: "Authorization",
-          description: "Enter JWT token",
-          in: "header",
-        },
-        "JWT-auth",
-      ) // Named scheme for @ApiBearerAuth()
-      .addServer(
-        `http://localhost:${process.env.PORT || 6000}${process.env.API_PREFIX ? `/${process.env.API_PREFIX}` : ""}`,
-        "Development",
-      )
-      .build();
+  const options = new DocumentBuilder()
+    .setTitle("REX Pro Backend APIs")
+    .setDescription("Backend APIs documentation for REX Pro.")
+    .setVersion("1.0.0")
+    .addBearerAuth({
+      type: "http",
+      scheme: "bearer",
+      bearerFormat: "JWT",
+    })
+    .build();
 
-    const document = SwaggerModule.createDocument(app, options, {
-      ignoreGlobalPrefix: false, // Include /api/v1 in path examples
-      operationIdFactory: (controllerKey: string, methodKey: string) =>
-        `${controllerKey}_${methodKey}`,
-    });
+  const document = SwaggerModule.createDocument(app, options);
+  document.tags = (document.tags || []).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
 
-    // Your custom sorting (tags alpha, paths sorted)
-    document.tags = (document.tags || []).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-    document.paths = Object.keys(document.paths)
-      .sort((a, b) => a.localeCompare(b))
-      .reduce((acc, key) => {
-        acc[key] = document.paths[key];
-        return acc;
-      }, {});
+  document.paths = Object.keys(document.paths)
+    .sort((a, b) => a.localeCompare(b))
+    .reduce((acc, key) => {
+      acc[key] = document.paths[key];
+      return acc;
+    }, {});
 
-    // Setup at 'swagger' → Full UI: /api/v1/swagger-ui.html
-    SwaggerModule.setup("swagger", app, document, {
-      swaggerOptions: {
-        persistAuthorization: true, // Keep JWT across tabs/refreshes
-        tagsSorter: "alpha",
-        operationsSorter: "method", // Group by HTTP method
-        docExpansion: "none", // Collapse all by default
-      },
-      customCssUrl:
-        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css", // Optional: Custom theme
-      customSiteTitle: "Marketplace API Docs",
-    });
-  }
+  SwaggerModule.setup("api/v1/swagger-ui.html", app, document);
+
+  const port = process.env.PORT!;
+  app.listen(port);
 }
 bootstrap()
   .then(() => {
-    const port = process.env.PORT;
-    Logger.log(`Server started on http://localhost:${port}`);
+    Logger.log(`Server started on http://localhost:${process.env.PORT!}`);
   })
   .catch((error) => {
     Logger.error(`Failed to start server: ${error.message}`, error.stack);

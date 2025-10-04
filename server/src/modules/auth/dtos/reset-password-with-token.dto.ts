@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   IsEmail,
   IsString,
@@ -5,11 +6,17 @@ import {
   MaxLength,
   MinLength,
 } from "class-validator";
+import { EmailDto } from "./email.dto";
 
-export class ResetPasswordWithTokenDto {
-  @IsEmail({}, { message: "Please provide a valid email address" })
-  email: string;
-
+export class ResetPasswordWithTokenDto extends EmailDto {
+  @ApiProperty({
+    description: "The new password for the account",
+    example: "P@ssw0rd",
+    minLength: 6,
+    maxLength: 50,
+    pattern:
+      "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]",
+  })
   @IsString({ message: "Password must be a string" })
   @MinLength(6, { message: "New password can't go below 6 characters" })
   @MaxLength(50, { message: "New password can't go beyond 50 characters" })

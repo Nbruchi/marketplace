@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   IsEmail,
   IsString,
@@ -11,13 +12,23 @@ import {
 import { OtpType } from "../../../shared/enums/otp-enum";
 
 export class SendOtpDto {
+  @ApiProperty({
+    description: "The email address to send the OTP to",
+    example: "user@example.com",
+    format: "email",
+  })
   @IsEmail({}, { message: "Please provide a valid email address" })
   email: string;
 
+  @ApiProperty({
+    description: "The type of OTP to send",
+    enum: OtpType,
+    example: OtpType.EMAIL_VERIFICATION,
+  })
   @IsEnum(OtpType)
   type: OtpType;
 
-  @IsOptional()
+  @ApiPropertyOptional()
   @IsString()
   userId?: string;
 
