@@ -14,7 +14,14 @@
       "email_already_exists": "Email address is already registered",
       "terms_not_accepted": "You must accept the Terms and Conditions",
       "email_already_verified": "Email address is already verified",
-      "invalid_reset_token": "Invalid or expired reset token"
+      "invalid_reset_token": "Invalid or expired reset token",
+      "invalid_token_type": "Invalid token type",
+      "token_revoked": "Token has been revoked",
+      "token_invalidated": "Token has been invalidated",
+      "account_not_active": "Account is not active",
+      "role_changed": "User role has changed",
+      "invalid_refresh_token": "Invalid refresh token",
+      "too_many_registration_attempts": "Too many registration attempts. Please try again later."
     },
     "success": {
       "registration_complete": "Registration successful! Please verify your email",

@@ -5,10 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-      {
-        "include": "i18n/**/*",
-        "outDir": "dist"
-      },
+      { "include": "**/*.json" },
+      { "include": "src/i18n/**/*", "outDir": "dist/i18n" },
       {
         "include": "modules/mail/templates/**/*",
         "outDir": "dist"

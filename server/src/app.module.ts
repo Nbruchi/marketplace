@@ -59,7 +59,6 @@ import bullConfig from "./config/bull-config";
   imports: [
     I18nModule.forRoot({
       fallbackLanguage: "en",
-      loader: I18nJsonLoader,
       loaderOptions: {
         path: join(__dirname, "./i18n/"),
         watch: true,
@@ -68,6 +67,7 @@ import bullConfig from "./config/bull-config";
         { use: QueryResolver, options: ["lang", "locale"] },
         AcceptLanguageResolver,
       ],
+      typesOutputPath: join(__dirname, "..", "src/generated/i18n.generated.ts"),
     }),
     ConfigModule.forRoot({
       isGlobal: true,

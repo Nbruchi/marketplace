@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
+  Inject,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -11,7 +12,7 @@ import { Repository } from "typeorm";
 import { User } from "src/shared/entities/user-entity";
 import { UserRole, UserStatus } from "src/shared/enums/user-enums";
 import { SecretUtils } from "src/shared/utils/secret-utils";
-import { I18nService } from "nestjs-i18n";
+import { I18nService, I18nContext } from "nestjs-i18n"; // Updated: Ensure I18nContext is imported
 import { MailService } from "../mail/mail.service";
 import { randomBytes } from "crypto";
 import { InjectRedis } from "@nestjs-modules/ioredis";
@@ -31,6 +32,11 @@ export class AuthService {
     @InjectRedis() private readonly redis: Redis,
     private readonly i18n: I18nService,
   ) {}
+
+  // Helper method to get current lang (reusable)
+  private getCurrentLang(): string {
+    return I18nContext.current<I18nContext>()?.lang || "en";
+  }
 
   async login(dto: LoginDto): Promise<{
     accessToken: string;
@@ -83,7 +89,11 @@ export class AuthService {
 
       // Check if it's a refresh token
       if (payload.type !== "refresh") {
-        throw new UnauthorizedException("Invalid token type");
+        throw new UnauthorizedException(
+          this.i18n.t("auth.errors.invalid_token_type", {
+            lang: this.getCurrentLang(),
+          }),
+        );
       }
 
       // Get user
@@ -101,23 +111,39 @@ export class AuthService {
       );
 
       if (!isValidToken) {
-        throw new UnauthorizedException("Token has been revoked");
+        throw new UnauthorizedException(
+          this.i18n.t("auth.errors.token_revoked", {
+            lang: this.getCurrentLang(),
+          }),
+        );
       }
 
       // Verify token version matches current user state
       // This allows us to invalidate all refresh tokens if needed
       if (payload.version !== user.activity?.loginCount) {
-        throw new UnauthorizedException("Token has been invalidated");
+        throw new UnauthorizedException(
+          this.i18n.t("auth.errors.token_invalidated", {
+            lang: this.getCurrentLang(),
+          }),
+        );
       }
 
       // Check user account status
       if (user.status !== UserStatus.ACTIVE) {
-        throw new UnauthorizedException("Account is not active");
+        throw new UnauthorizedException(
+          this.i18n.t("auth.errors.account_not_active", {
+            lang: this.getCurrentLang(),
+          }),
+        );
       }
 
       // Check user role hasn't changed
       if (payload.role !== user.role) {
-        throw new UnauthorizedException("User role has changed");
+        throw new UnauthorizedException(
+          this.i18n.t("auth.errors.role_changed", {
+            lang: this.getCurrentLang(),
+          }),
+        );
       }
 
       // Generate new access token only (refresh token remains valid)
@@ -142,7 +168,11 @@ export class AuthService {
 
       return { accessToken };
     } catch (error) {
-      throw new UnauthorizedException("Invalid refresh token");
+      throw new UnauthorizedException(
+        this.i18n.t("auth.errors.invalid_refresh_token", {
+          lang: this.getCurrentLang(),
+        }),
+      );
     }
   }
 
@@ -160,14 +190,18 @@ export class AuthService {
 
     if (existingUser) {
       throw new BadRequestException(
-        this.i18n.t("auth.errors.email_already_exists"),
+        this.i18n.t("auth.errors.email_already_exists", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
     // Validate terms acceptance
     if (!dto.acceptTerms) {
       throw new BadRequestException(
-        this.i18n.t("auth.errors.terms_not_accepted"),
+        this.i18n.t("auth.errors.terms_not_accepted", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
@@ -210,7 +244,9 @@ export class AuthService {
 
     return {
       success: true,
-      message: "Registration successful! Please verify your email",
+      message: this.i18n.t("auth.success.registration", {
+        lang: this.getCurrentLang(),
+      }),
       userId: user.id,
     };
   }
@@ -224,13 +260,19 @@ export class AuthService {
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new BadRequestException(this.i18n.t("auth.errors.user_not_found"));
+      throw new BadRequestException(
+        this.i18n.t("auth.errors.user_not_found", {
+          lang: this.getCurrentLang(),
+        }),
+      );
     }
 
     // Check if already verified
     if (user.isEmailVerified) {
       throw new BadRequestException(
-        this.i18n.t("auth.errors.email_already_verified"),
+        this.i18n.t("auth.errors.email_already_verified", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
@@ -272,7 +314,9 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.email_verified"),
+      message: this.i18n.t("auth.success.email_verified", {
+        lang: this.getCurrentLang(),
+      }),
     };
   }
 
@@ -285,7 +329,11 @@ export class AuthService {
     // Check if user exists
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
-      throw new BadRequestException(this.i18n.t("auth.errors.user_not_found"));
+      throw new BadRequestException(
+        this.i18n.t("auth.errors.user_not_found", {
+          lang: this.getCurrentLang(),
+        }),
+      );
     }
 
     return this.mailService.sendPasswordReset(email, user.id);
@@ -329,7 +377,9 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset_otp_verified"),
+      message: this.i18n.t("auth.success.password_reset_otp_verified", {
+        lang: this.getCurrentLang(),
+      }),
       resetToken,
     };
   }
@@ -349,13 +399,17 @@ export class AuthService {
     const resetTokenData = await this.redis.get(resetKey);
     if (!resetTokenData) {
       throw new BadRequestException(
-        this.i18n.t("auth.errors.invalid_reset_token"),
+        this.i18n.t("auth.errors.invalid_reset_token", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset_token_verified"),
+      message: this.i18n.t("auth.success.password_reset_token_verified", {
+        lang: this.getCurrentLang(),
+      }),
     };
   }
 
@@ -375,7 +429,9 @@ export class AuthService {
     const resetTokenData = await this.redis.get(resetKey);
     if (!resetTokenData) {
       throw new BadRequestException(
-        this.i18n.t("auth.errors.invalid_reset_token"),
+        this.i18n.t("auth.errors.invalid_reset_token", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
@@ -400,7 +456,9 @@ export class AuthService {
 
     return {
       success: true,
-      message: this.i18n.t("auth.success.password_reset"),
+      message: this.i18n.t("auth.success.password_reset", {
+        lang: this.getCurrentLang(),
+      }),
     };
   }
 
@@ -415,7 +473,11 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
-      throw new BadRequestException(this.i18n.t("auth.errors.user_not_found"));
+      throw new BadRequestException(
+        this.i18n.t("auth.errors.user_not_found", {
+          lang: this.getCurrentLang(),
+        }),
+      );
     }
 
     return this.mailService.sendPasswordReset(email, user.id);
@@ -428,7 +490,9 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new UnauthorizedException(
-        this.i18n.t("auth.errors.invalid_credentials"),
+        this.i18n.t("auth.errors.invalid_credentials", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
@@ -436,17 +500,23 @@ export class AuthService {
     if (user.status !== UserStatus.ACTIVE) {
       if (user.status === UserStatus.PENDING) {
         throw new ForbiddenException(
-          this.i18n.t("auth.errors.email_verification_required"),
+          this.i18n.t("auth.errors.email_verification_required", {
+            lang: this.getCurrentLang(),
+          }),
         );
       }
       if (user.status === UserStatus.SUSPENDED) {
         throw new ForbiddenException(
-          this.i18n.t("auth.errors.account_suspended"),
+          this.i18n.t("auth.errors.account_suspended", {
+            lang: this.getCurrentLang(),
+          }),
         );
       }
       if (user.status === UserStatus.DELETED) {
         throw new UnauthorizedException(
-          this.i18n.t("auth.errors.invalid_credentials"),
+          this.i18n.t("auth.errors.invalid_credentials", {
+            lang: this.getCurrentLang(),
+          }),
         );
       }
     }
@@ -454,13 +524,19 @@ export class AuthService {
     // Check email verification
     if (!user.isEmailVerified) {
       throw new ForbiddenException(
-        this.i18n.t("auth.errors.email_verification_required"),
+        this.i18n.t("auth.errors.email_verification_required", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
     // Check account lockout
     if (user.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new ForbiddenException(this.i18n.t("auth.errors.account_locked"));
+      throw new ForbiddenException(
+        this.i18n.t("auth.errors.account_locked", {
+          lang: this.getCurrentLang(),
+        }),
+      );
     }
 
     const isValid = await SecretUtils.compare(password, user.password);
@@ -468,7 +544,9 @@ export class AuthService {
       // Increment failed login attempts
       await this.handleFailedLogin(user);
       throw new UnauthorizedException(
-        this.i18n.t("auth.errors.invalid_credentials"),
+        this.i18n.t("auth.errors.invalid_credentials", {
+          lang: this.getCurrentLang(),
+        }),
       );
     }
 
