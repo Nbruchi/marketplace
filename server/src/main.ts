@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { HttpExceptionFilter } from "./shared/filters/http-exception-filter";
+import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 
 async function bootstrap() {
@@ -39,35 +39,74 @@ async function bootstrap() {
     }),
   );
 
-  // Build Swagger docs but guard any errors so they don't stop the server
+  // Enhanced Swagger configuration
   try {
-    const options = new DocumentBuilder()
-      .setTitle("Marketplace Backend APIs")
-      .setDescription("Backend APIs documentation for Marketplace.")
+    Logger.log("Initializing Swagger documentation...");
+
+    const config = new DocumentBuilder()
+      .setTitle("Marketplace API Documentation")
+      .setDescription(
+        "Comprehensive API documentation for the Marketplace backend services",
+      )
       .setVersion("1.0.0")
-      .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" })
+      .addBearerAuth(
+        {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          name: "JWT",
+          description: "Enter JWT token",
+          in: "header",
+        },
+        "JWT-auth", // This name should be used as the @ApiBearerAuth('JWT-auth') in controllers
+      )
+      .addServer(`http://localhost:${process.env.PORT || 3000}`, "Development")
       .build();
 
-    const document = SwaggerModule.createDocument(app, options);
-    document.tags = (document.tags || []).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
+    const document = SwaggerModule.createDocument(app, config);
 
-    if (document.paths) {
-      document.paths = Object.keys(document.paths)
-        .sort((a, b) => a.localeCompare(b))
-        .reduce((acc, key) => {
-          acc[key] = document.paths[key];
-          return acc;
-        }, {} as any);
+    // Sort tags alphabetically for better organization
+    if (document.tags) {
+      document.tags.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    SwaggerModule.setup("api/v1/swagger-ui.html", app, document);
-  } catch (err) {
-    // Don't let swagger generation prevent app startup
-    Logger.warn(
-      `Swagger setup failed: ${err instanceof Error ? err.message : err}`,
-    );
+    // Sort paths for better readability
+    if (document.paths) {
+      const sortedPaths = {};
+      Object.keys(document.paths)
+        .sort()
+        .forEach((key) => {
+          sortedPaths[key] = document.paths[key];
+        });
+      document.paths = sortedPaths;
+    }
+
+    // Set up Swagger UI with custom options
+    SwaggerModule.setup("api/docs", app, document, {
+      explorer: true,
+      swaggerOptions: {
+        docExpansion: "list",
+        filter: true,
+        showRequestDuration: true,
+        persistAuthorization: true,
+      },
+      customSiteTitle: "Marketplace API Documentation",
+      customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .info { margin: 20px 0 }
+        .swagger-ui .markdown p { margin: 0.5em 0 }
+      `,
+      customfavIcon: "https://marketplace.com/favicon.ico",
+    });
+
+    Logger.log(`Swagger documentation available at /api/docs`);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    Logger.error(`Failed to initialize Swagger: ${errorMessage}`, error?.stack);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Detailed Swagger error:", error);
+    }
   }
 
   // Parse port safely and await the listen call so bootstrap resolves/rejects correctly

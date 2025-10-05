@@ -211,6 +211,9 @@ export class User extends BaseEntity {
   @Column({ name: "profile_image", nullable: true })
   profileImage: string;
 
+  @Column({ name: "profile_picture_public_id", nullable: true })
+  profilePicturePublicId: string;
+
   /**
    * User's preferred language code (ISO 639-1)
    * @default 'en'

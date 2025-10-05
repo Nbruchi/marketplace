@@ -29,7 +29,7 @@ export class CompleteProfileDto {
     example: "+1234567890",
   })
   @IsOptional()
-  @IsPhoneNumber("US", { message: "Invalid phone number" })
+  @IsPhoneNumber("RW", { message: "Invalid phone number" })
   phoneNumber?: string;
 
   @ApiPropertyOptional({
