@@ -1,195 +1,177 @@
 import { UsersService } from "./users.service";
 import { User } from "src/shared/entities/user-entity";
 import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
-import { CompleteProfileDto } from "./dtos/complete-profile.dto";
-import { UserQueryDto, UserRole } from "./dtos/user-query.dto";
 import { ChangePasswordDto } from "./dtos/change-password.dto";
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-  ApiOkResponse,
-  ApiQuery,
-} from "@nestjs/swagger";
+import { CreateAddressDto } from "./dtos/create-address.dto";
+import { UpdateAddressDto } from "./dtos/update-address.dto";
+import { CurrentUser } from "src/shared/decorators/current-user.decorator";
+import { Roles } from "src/shared/decorators/roles.decorator";
+import { UserQueryDto, UserRole } from "./dtos/user-query.dto";
+import { Query } from "@nestjs/common";
+
 import {
   Controller,
   Get,
+  Post,
   Body,
   Patch,
-  UseGuards,
-  Query,
-  ValidationPipe,
+  Param,
   Delete,
+  UseGuards,
   UploadedFile,
   UseInterceptors,
-  BadRequestException,
-  Post,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from "@nestjs/common";
-import { CurrentUser } from "src/shared/decorators/current-user.decorator";
-import { UserRole as UserRoleEnum } from "src/shared/enums/user-enums";
-import { Roles } from "src/shared/decorators/roles.decorator";
 import { FileInterceptor } from "@nestjs/platform-express";
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiResponse,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiUnauthorizedResponse,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+} from "@nestjs/swagger";
+import { UpdateProfileDto } from "./dtos/update-profile.dto";
 
-@ApiTags("Users")
+@ApiTags("users")
 @Controller("users")
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  /**
-   * Get a paginated list of customers
-   */
-  @Get("customers")
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.SELLER)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get paginated list of customers",
-    description:
-      "Retrieve a paginated list of customers with filtering and sorting options",
-  })
-  @ApiOkResponse({ description: "Returns a paginated list of customers" })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiQuery({ name: "search", required: false, type: String })
-  @ApiQuery({
-    name: "status",
-    required: false,
-    enum: Object.values(UserRoleEnum),
-  })
-  @ApiQuery({
-    name: "sortBy",
-    required: false,
-    enum: ["createdAt", "updatedAt", "email"],
-  })
-  @ApiQuery({ name: "sortOrder", required: false, enum: ["ASC", "DESC"] })
-  async getCustomers(
-    @Query(new ValidationPipe({ transform: true })) query: UserQueryDto,
-  ) {
-    // Force the role to be CUSTOMER
-    query.role = UserRole.CUSTOMER;
+  @Get()
+  @Roles(UserRole.ADMIN, UserRole.SELLER)
+  @ApiOperation({ summary: "Get all users (Admin and sellers only)" })
+  @ApiOkResponse({ description: "List of all users" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  async getUsers(@Query() query: UserQueryDto) {
     return this.usersService.findUsers(query);
   }
 
-  /**
-   * Get a paginated list of users sellers
-   */
-  @Patch("change-password")
-  @ApiOperation({
-    summary: "Change user password",
-    description: "Change the password for the currently authenticated user",
-  })
-  @ApiOkResponse({ description: "Password changed successfully" })
-  @ApiBearerAuth()
-  async changePassword(
-    @CurrentUser() user: User,
-    @Body() dto: ChangePasswordDto,
-  ) {
-    await this.usersService.changePassword(user.id, dto);
-    return { message: "Password changed successfully" };
-  }
-
-  @Get("staff")
-  @Roles(UserRoleEnum.ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get paginated list of staff members",
-    description:
-      "Retrieve a paginated list of staff (admins and sellers) with filtering and sorting options",
-  })
-  @ApiOkResponse({ description: "Returns a paginated list of staff members" })
-  @ApiQuery({ name: "page", required: false, type: Number })
-  @ApiQuery({ name: "limit", required: false, type: Number })
-  @ApiQuery({ name: "search", required: false, type: String })
-  @ApiQuery({
-    name: "role",
-    required: false,
-    enum: [UserRoleEnum.SELLER],
-    description: "Filter by staff role (SELLER)",
-  })
-  @ApiQuery({
-    name: "status",
-    required: false,
-    enum: Object.values(UserRoleEnum),
-  })
-  @ApiQuery({
-    name: "sortBy",
-    required: false,
-    enum: ["createdAt", "updatedAt", "email"],
-  })
-  @ApiQuery({ name: "sortOrder", required: false, enum: ["ASC", "DESC"] })
-  async getStaff(
-    @Query(new ValidationPipe({ transform: true })) query: UserQueryDto,
-  ) {
+  @Get("sellers")
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: "Get all sellers (Admin only)" })
+  @ApiOkResponse({ description: "List of all sellers" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
+  async getSellers(@Query() query: UserQueryDto) {
     query.role = UserRole.SELLER;
     return this.usersService.findUsers(query);
   }
 
-  /**
-   * Update/complete user profile
-   */
-  @Patch("profile/complete")
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Complete user profile",
-    description:
-      "Complete user profile with additional information after registration. This is typically used for onboarding.",
-  })
-  async completeProfile(
-    @CurrentUser() user: User,
-    @Body() completeProfileDto: CompleteProfileDto,
-  ) {
-    return this.usersService.completeProfile(user.id, completeProfileDto);
-  }
-
-  /**
-   * Get current user's profile
-   */
   @Get("profile")
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: "Get current user profile",
-    description: "Retrieve the authenticated user's profile information",
-  })
+  @ApiOperation({ summary: "Get current user profile" })
+  @ApiOkResponse({ description: "User profile retrieved successfully" })
+  @ApiUnauthorizedResponse({ description: "Unauthorized" })
   async getProfile(@CurrentUser() user: User) {
     return this.usersService.getUserProfile(user.id);
   }
 
-  /**
-   * Upload current user's profile picture
-   */
+  @Patch("profile")
+  @ApiOperation({ summary: "Update user profile" })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiOkResponse({ description: "User profile updated successfully" })
+  @ApiBadRequestResponse({ description: "Invalid input" })
+  async updateProfile(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.usersService.completeProfile(user.id, updateProfileDto);
+  }
+
+  @Post("change-password")
+  @ApiOperation({ summary: "Change user password" })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiOkResponse({ description: "Password changed successfully" })
+  @ApiBadRequestResponse({ description: "Invalid current password" })
+  async changePassword(
+    @CurrentUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(user.id, changePasswordDto);
+  }
+
+  // Address endpoints
+  @Post("addresses")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Add a new address" })
+  @ApiBody({ type: CreateAddressDto })
+  @ApiCreatedResponse({ description: "Address added successfully" })
+  async addAddress(
+    @CurrentUser() user: User,
+    @Body() createAddressDto: CreateAddressDto,
+  ) {
+    return this.usersService.createAddress(user.id, createAddressDto);
+  }
+
+  @Get("addresses")
+  @ApiOperation({ summary: "Get all user addresses" })
+  @ApiOkResponse({ description: "List of user addresses" })
+  async getUserAddresses(@CurrentUser() user: User) {
+    return this.usersService.getUserAddresses(user.id);
+  }
+
+  @Patch("addresses/:id")
+  @ApiOperation({ summary: "Update an address" })
+  @ApiBody({ type: UpdateAddressDto })
+  @ApiOkResponse({ description: "Address updated successfully" })
+  @ApiNotFoundResponse({ description: "Address not found" })
+  async updateAddress(
+    @CurrentUser() user: User,
+    @Param("id") addressId: string,
+    @Body() updateAddressDto: UpdateAddressDto,
+  ) {
+    return this.usersService.updateAddress(
+      user.id,
+      addressId,
+      updateAddressDto,
+    );
+  }
+
+  @Delete("addresses/:id")
+  @ApiOperation({ summary: "Delete an address" })
+  @ApiOkResponse({ description: "Address deleted successfully" })
+  @ApiNotFoundResponse({ description: "Address not found" })
+  async deleteAddress(
+    @CurrentUser() user: User,
+    @Param("id") addressId: string,
+  ) {
+    return this.usersService.deleteAddress(user.id, addressId);
+  }
+
   @Post("profile/picture")
-  @ApiOperation({
-    summary: "Upload profile picture",
-    description: "Upload or update the authenticated user profile picture",
-  })
-  @ApiOkResponse({
-    description: "Profile picture updated successfully",
-    type: () => ({ profilePicture: String }),
-  })
-  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor("file"))
+  @ApiOperation({ summary: "Upload profile picture" })
+  @ApiResponse({
+    status: 201,
+    description: "Profile picture uploaded successfully",
+  })
+  @ApiResponse({ status: 400, description: "Invalid file type or size" })
   async uploadProfilePicture(
     @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
   ) {
-    if (!file) {
-      throw new BadRequestException("No file uploaded");
-    }
     return this.usersService.updateProfilePicture(user.id, file);
   }
 
-  /**
-   * Remove current user's profile picture
-   */
   @Delete("profile/picture")
-  @ApiOperation({
-    summary: "Remove profile picture",
-    description: "Remove the authenticated user profile picture",
-  })
+  @ApiOperation({ summary: "Remove profile picture" })
   @ApiOkResponse({ description: "Profile picture removed successfully" })
-  @ApiBearerAuth()
   async removeProfilePicture(@CurrentUser() user: User) {
-    await this.usersService.removeProfilePicture(user.id);
-    return { message: "Profile picture removed successfully" };
+    return this.usersService.removeProfilePicture(user.id);
   }
 }

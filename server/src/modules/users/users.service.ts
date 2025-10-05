@@ -5,13 +5,16 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, Not } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { User } from "src/shared/entities/user-entity";
 import { CompleteProfileDto } from "./dtos/complete-profile.dto";
 import { UserQueryDto } from "./dtos/user-query.dto";
 import { ChangePasswordDto } from "./dtos/change-password.dto";
 import { CloudinaryService } from "../cloudinary/cloudinary.service";
+import { CreateAddressDto } from "./dtos/create-address.dto";
+import { UpdateAddressDto } from "./dtos/update-address.dto";
+import { Address } from "src/shared/entities/address-entity";
 
 @Injectable()
 export class UsersService {
@@ -20,8 +23,24 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Address)
+    private readonly addressRepository: Repository<Address>,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+  /**
+   * Find a user by email
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
+  /**
+   * Find a user by ID
+   */
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id } });
+  }
 
   /**
    * Complete user profile with additional information
@@ -271,5 +290,112 @@ export class UsersService {
 
       await this.userRepository.save(user);
     }
+  }
+
+  // Address related methods
+  async createAddress(userId: string, createAddressDto: CreateAddressDto): Promise<Address> {
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['addresses'] });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const address = this.addressRepository.create({
+      ...createAddressDto,
+      user,
+    });
+
+    // If this is the first address, set it as default
+    if (!user.addresses || user.addresses.length === 0) {
+      address.isDefault = true;
+    } else if (createAddressDto.isDefault) {
+      // If setting as default, update other addresses
+      await this.addressRepository.update(
+        { user: { id: userId }, isDefault: true },
+        { isDefault: false }
+      );
+    }
+
+    return this.addressRepository.save(address);
+  }
+
+  async getUserAddresses(userId: string): Promise<Address[]> {
+    return this.addressRepository.find({
+      where: { user: { id: userId } },
+      order: { isDefault: 'DESC', createdAt: 'DESC' },
+    });
+  }
+
+  async updateAddress(
+    userId: string,
+    addressId: string,
+    updateAddressDto: UpdateAddressDto,
+  ): Promise<Address> {
+    const address = await this.addressRepository.findOne({
+      where: { id: addressId, user: { id: userId } },
+    });
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    if (updateAddressDto.isDefault) {
+      // Update other addresses to not be default
+      await this.addressRepository.update(
+        { user: { id: userId }, isDefault: true },
+        { isDefault: false }
+      );
+    }
+
+    return this.addressRepository.save({
+      ...address,
+      ...updateAddressDto,
+    });
+  }
+
+  async deleteAddress(userId: string, addressId: string): Promise<void> {
+    const address = await this.addressRepository.findOne({
+      where: { id: addressId, user: { id: userId } },
+    });
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    if (address.isDefault) {
+      // Find another address to set as default
+      const anotherAddress = await this.addressRepository.findOne({
+        where: { user: { id: userId }, id: Not(addressId) },
+      });
+
+      if (anotherAddress) {
+        anotherAddress.isDefault = true;
+        await this.addressRepository.save(anotherAddress);
+      }
+    }
+
+    await this.addressRepository.remove(address);
+  }
+
+  async setDefaultAddress(userId: string, addressId: string): Promise<Address> {
+    const [address, currentDefault] = await Promise.all([
+      this.addressRepository.findOne({
+        where: { id: addressId, user: { id: userId } },
+      }),
+      this.addressRepository.findOne({
+        where: { user: { id: userId }, isDefault: true },
+      }),
+    ]);
+
+    if (!address) {
+      throw new NotFoundException('Address not found');
+    }
+
+    if (currentDefault && currentDefault.id !== addressId) {
+      currentDefault.isDefault = false;
+      await this.addressRepository.save(currentDefault);
+    }
+
+    address.isDefault = true;
+    return this.addressRepository.save(address);
   }
 }

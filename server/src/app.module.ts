@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -39,21 +40,23 @@ import { ShippingRate } from "./shared/entities/shipping-rate-entity";
 import { ShippingZone } from "./shared/entities/shipping-zone-entity";
 import { StorePolicy } from "./shared/entities/store-policy-entity";
 import { TaxInformation } from "./shared/entities/tax-information-entity";
-import { User } from "./shared/entities/user-entity";
 import { Wishlist } from "./shared/entities/wishlist-entity";
 import { WishlistItem } from "./shared/entities/wishlist-item-entity";
 import { AuthModule } from "./modules/auth/auth.module";
 import { MailModule } from "./modules/mail/mail.module";
 import { format, transports } from "winston";
+import { JwtAuthGuard } from "./shared/guards/jwt-auth.guard";
+import { UsersModule } from "./modules/users/users.module";
+import { CloudinaryModule } from "./modules/cloudinary/cloudinary.module";
 import { WinstonModule } from "nest-winston";
-import { UsersModule } from './modules/users/users.module';
-import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { User } from "./shared/entities/user-entity";
 import bullConfig from "./config/bull-config";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ".env",
       load: [
         appConfig,
         bullConfig,
@@ -145,6 +148,12 @@ import bullConfig from "./config/bull-config";
     CloudinaryModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

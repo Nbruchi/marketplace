@@ -15,7 +15,7 @@ This repository is a NestJS backend for a multi-vendor marketplace. The goal of 
   - Config files live under `src/config/*` and are mounted with `ConfigModule.forRoot({ load: [...] })`. They expose the exact env keys used by the app. Key files and example env variables:
     - `config/app-config.ts` — PORT, API_PREFIX, APP_URL, CORS_ORIGIN
     - `config/database-config.ts` — DATABASE_URL or DATABASE_HOST, DATABASE_PORT, DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_NAME
-    - `config/jwt-config.ts` — ACCESS_TOKEN_SECRET / EXPIRES_IN, REFRESH_TOKEN_SECRET / EXPIRES_IN
+    - `config/jwt-config.ts` — JWT_ACCESS_TOKEN_SECRET / EXPIRES_IN, REFRESH_TOKEN_SECRET / EXPIRES_IN
     - `config/redis-config.ts` / `bull-config.ts` — REDIS_URL or REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
     - `config/cloudinary-config.ts` — CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
     - `config/email-config.ts` — SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
@@ -36,7 +36,7 @@ This repository is a NestJS backend for a multi-vendor marketplace. The goal of 
   - Global `ValidationPipe` uses `whitelist: true` and `forbidNonWhitelisted: true` — DTOs must explicitly declare accepted fields.
 
 - Project-specific patterns & gotchas
-  - Config via `@nestjs/config` registers named configs (e.g., `registerAs('jwt', ...)`). Use `ConfigService.get<string>('jwt.accessToken.secret')` or inject specific config where needed.
+  - Config via `@nestjs/config` registers named configs (e.g., `registerAs('jwt', ...)`). Use `ConfigService.get<string>('accessToken.secret')` or inject specific config where needed.
   - Entities are imported by class reference in `app.module.ts` rather than a glob. When adding an entity, update `app.module.ts` entities array or register via TypeORM module in the feature module.
   - `synchronize: true` in TypeORM means schema changes apply automatically — do not assume migrations exist.
   - API path sorting and Swagger manipulation happen in `main.ts` (document paths sorted and tags sorted) — when adding controllers, expect Swagger output ordering.

@@ -287,6 +287,13 @@ export class Address extends BaseEntity {
   @Column({ type: "decimal", precision: 11, scale: 8, nullable: true })
   longitude: number;
 
+  /**
+   * Additional notes or instructions
+   * @example 'Ring the doorbell twice'
+   */
+  @Column({ name: "notes", nullable: true })
+  notes: string;
+
   // ========== HELPER METHODS ==========
 
   /**
