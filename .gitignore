@@ -5,9 +5,7 @@ Thumbs.db
 .idea/
 
 # Env / secrets
-.env
 .env.*.local
-.env.local
 
 # Logs
 logs/
@@ -41,3 +39,4 @@ tsconfig.tsbuildinfo
 # Misc
 *.tmp
 *.temp
+config.bat
