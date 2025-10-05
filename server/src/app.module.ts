@@ -47,6 +47,7 @@ import { MailModule } from "./modules/mail/mail.module";
 import { format, transports } from "winston";
 import { WinstonModule } from "nest-winston";
 import { UsersModule } from './modules/users/users.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import bullConfig from "./config/bull-config";
 
 @Module({
@@ -141,6 +142,7 @@ import bullConfig from "./config/bull-config";
     AuthModule,
     MailModule,
     UsersModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
