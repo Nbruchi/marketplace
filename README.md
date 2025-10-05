@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://nextjs.org/" target="_blank">
-    <img src="https://raw.githubusercontent.com/vercel/next.js/canary/packages/next/next-logo.svg" width="120" alt="Next.js Logo" />
+    <img src="./client/public/landing.png" width="1200" alt="Marketplace landing" />
   </a>
   <h2 align="center">MarketPlace — Fullstack (Client + API)</h2>
   <p align="center">A multi-vendor e-commerce platform: Next.js frontend and NestJS backend (TypeORM + PostgreSQL)</p>

@@ -19,6 +19,7 @@ import { RegisterDto } from "./dtos/register.dto";
 import { OtpType } from "src/shared/enums/otp-enum";
 import { LoginDto } from "./dtos/login.dto";
 import { RevokeRefreshTokenDto } from "./dtos/revoke-refresh-token.dto";
+import { ResetPasswordDto } from "./dtos/reset-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -353,27 +354,48 @@ export class AuthService {
   /**
    * Reset password with token (Step 2)
    */
-  async resetPasswordWithToken(
-    email: string,
-    resetToken: string,
-    newPassword: string,
-  ): Promise<{
+  async resetPasswordWithToken(dto: ResetPasswordDto): Promise<{
     success: boolean;
     message?: string;
   }> {
+    // Validate password confirmation
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException(
+        "Password confirmation does not match new password",
+      );
+    }
+
     // Get reset token from redis
-    const resetKey = `reset_token:${email}:${resetToken}`;
+    const resetKey = `reset_token:${dto.email}:${dto.resetToken}`;
     const resetTokenData = await this.redis.get(resetKey);
     if (!resetTokenData) {
       throw new BadRequestException("Invalid or expired reset token");
     }
 
+    // Get user and check if new password is same as old password
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+    if (!user) {
+      throw new BadRequestException("User not found");
+    }
+
+    const isSamePassword = await SecretUtils.compare(
+      dto.newPassword,
+      user.password,
+    );
+    if (isSamePassword) {
+      throw new BadRequestException(
+        "New password must be different from your current password",
+      );
+    }
+
     // Hash the password
-    const hashedPassword = await SecretUtils.hash(newPassword);
+    const hashedPassword = await SecretUtils.hash(dto.newPassword);
 
     // Update user password in db
     await this.userRepository.update(
-      { email },
+      { email: dto.email },
       {
         password: hashedPassword,
         passwordResetToken: undefined,
@@ -385,7 +407,7 @@ export class AuthService {
     await this.redis.del(resetKey);
 
     // Send confirmation email
-    await this.mailService.sendPasswordResetConfirmation(email);
+    await this.mailService.sendPasswordResetConfirmation(dto.email);
 
     return {
       success: true,

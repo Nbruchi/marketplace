@@ -11,6 +11,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import * as ejs from "ejs";
 import { OtpType } from "src/shared/enums/otp-enum";
+import sharp from "sharp";
 
 export interface SendEmailOptions {
   to: string;
@@ -21,6 +22,8 @@ export interface SendEmailOptions {
     filename: string;
     content: Buffer | string;
     contentType?: string;
+    cid?: string;
+    contentDisposition?: "inline" | "attachment";
   }>;
 }
 
@@ -60,16 +63,28 @@ export class MailService {
    */
   async sendEmail(options: SendEmailOptions): Promise<boolean> {
     try {
-      const { to, subject, template, context = {}, attachments } = options;
+      const { to, subject, template, context = {}, attachments = [] } = options;
+
+      // Load logo image and optimize it
+      const logoPath = join(__dirname, "templates", "logo.png");
+      const logoBuffer = await sharp(logoPath)
+        .resize(200, 200, {
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        })
+        .png({ quality: 80, compressionLevel: 9 })
+        .toBuffer();
 
       // Load and render EJS template
       const templatePath = join(__dirname, "templates", `${template}.ejs`);
       const templateContent = readFileSync(templatePath, "utf8");
 
       // Prepare template context with default values
+      // Use CID reference for the logo instead of inline base64
       const templateContext = {
         ...context,
         // App Info
+        logoUrl: "cid:logo", // CID reference for embedded image
         appName: this.configService.get("app.name"),
         appUrl: this.configService.get("app.url"),
         appAddress: this.configService.get("app.companyAddress"),
@@ -99,13 +114,35 @@ export class MailService {
         filename: templatePath, // Enables includes/extends
       });
 
-      // Send email using nodemailer
+      // Send email using nodemailer with company name as sender
+      const fromName = this.configService.get("app.name") ?? "Marketplace";
+      const fromAddress = this.configService.get("email.from");
+
+      if (!fromAddress) {
+        throw new Error("Email from address not configured");
+      }
+
+      // Prepare attachments with logo embedded as CID
+      const emailAttachments = [
+        {
+          filename: "logo.png",
+          content: logoBuffer,
+          cid: "logo", // Content-ID that matches the template reference
+          contentType: "image/png",
+          contentDisposition: "inline" as const,
+        },
+        ...attachments, // Include any additional attachments
+      ];
+
       await this.transporter.sendMail({
-        from: this.configService.get("email.from"),
+        from: {
+          name: fromName,
+          address: fromAddress,
+        },
         to,
         subject,
         html,
-        attachments,
+        attachments: emailAttachments,
       });
 
       this.logger.log(`Email sent successfully to ${to}`);
@@ -300,16 +337,40 @@ export class MailService {
     });
   }
 
-  /**
+    /**
    * Send password reset confirmation
    */
-  async sendPasswordResetConfirmation(email: string): Promise<boolean> {
+  async sendPasswordResetConfirmation(
+    email: string,
+    metadata?: {
+      ipAddress?: string;
+      location?: string;
+      device?: string;
+    },
+  ): Promise<boolean> {
+    // Get user info for the email template
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    // Format timestamp
+    const timestamp = new Date().toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
     return this.sendEmail({
       to: email,
       subject: "Password Reset Successful",
       template: "password-reset-confirmation",
       context: {
         email,
+        userName: user?.fullNames || "User",
+        timestamp,
+        location: metadata?.location || "Unknown",
+        device: metadata?.device || "Unknown Device",
         resetPasswordUrl: this.configService.get(
           "app.webAppUrls.resetPassword",
         ),

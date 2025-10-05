@@ -22,14 +22,17 @@
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       }
       .header {
-        text-align: center;
+        text-align: start;
         margin-bottom: 30px;
       }
       .logo {
-        font-size: 28px;
-        font-weight: bold;
-        color: #2563eb;
         margin-bottom: 10px;
+        text-align: start;
+      }
+      .logo img {
+        max-width: 150px;
+        height: auto;
+        display: inline-block;
       }
       .welcome-message {
         font-size: 24px;
@@ -51,26 +54,40 @@
         display: flex;
         align-items: center;
         margin-bottom: 15px;
+        gap: 10px;
       }
       .feature-icon {
         width: 24px;
         height: 24px;
-        background: #e5edff;
+        background: #ffeded;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-right: 12px;
-        color: #2563eb;
+        color: #8b0000;
       }
+
+      .cta {
+        text-align: center;
+        margin-top: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+      }
+
       .cta-button {
-        display: inline-block;
-        background: #2563eb;
-        color: white;
+        display: block;
+        background: #8b0000;
+        color: white !important;
         padding: 12px 24px;
         border-radius: 6px;
         text-decoration: none;
         font-weight: 500;
+        width: 50%;
+        text-align: center;
         margin-top: 20px;
       }
       .footer {
@@ -83,7 +100,7 @@
         margin-top: 20px;
       }
       .social-link {
-        color: #2563eb;
+        color: #8b0000;
         text-decoration: none;
         margin: 0 8px;
       }
@@ -92,7 +109,9 @@
   <body>
     <div class="container">
       <div class="header">
-        <div class="logo"><%= appName %></div>
+        <div class="logo">
+          <img src="<%= logoUrl %>" alt="<%= appName %>" />
+        </div>
         <h1 class="welcome-message">Welcome, <%= userName %>!</h1>
       </div>
       <div class="content">
@@ -103,24 +122,25 @@
         </p>
         <div class="features">
           <div class="feature-item">
-            <span class="feature-icon">✓</span>
+            <span class="feature-icon">✅</span>
             <span>Browse and shop from thousands of products</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">✓</span>
+            <span class="feature-icon">✅</span>
             <span>Track your orders in real-time</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">✓</span>
+            <span class="feature-icon">✅</span>
             <span>Save your favorite items to your wishlist</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">✓</span>
+            <span class="feature-icon">✅</span>
             <span>Get exclusive deals and offers</span>
           </div>
         </div>
-        <p>Ready to start shopping?</p>
-        <a href="<%= loginUrl %>" class="cta-button">Visit Our Store</a>
+        <div class="cta">
+          <a href="<%= loginUrl %>" class="cta-button">Visit Our Store</a>
+        </div>
       </div>
       <div class="footer">
         <p>

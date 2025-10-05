@@ -2,7 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dtos/login.dto";
-import { ResetPasswordWithTokenDto } from "./dtos/reset-password-with-token.dto";
+import { ResetPasswordDto } from "./dtos/reset-password.dto";
 import { VerifyEmailDto } from "./dtos/verify-email.dto";
 import { EmailDto } from "./dtos/email.dto";
 import { RegisterDto } from "./dtos/register.dto";
@@ -89,13 +89,8 @@ export class AuthController {
   @ApiOperation({ summary: "Reset password with token" })
   @ApiResponse({ status: 200, description: "Password reset successfully" })
   @ApiResponse({ status: 400, description: "Invalid token or password" })
-  async resetPasswordWithToken(@Body() dto: ResetPasswordWithTokenDto) {
-    // service expects (email, resetToken, newPassword)
-    return this.authService.resetPasswordWithToken(
-      dto.email,
-      dto.resetToken,
-      dto.newPassword,
-    );
+  async resetPasswordWithToken(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPasswordWithToken(dto);
   }
 
   @Post("resend-password-reset-otp")
