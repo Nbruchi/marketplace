@@ -18,6 +18,7 @@ import Redis from "ioredis";
 import { RegisterDto } from "./dtos/register.dto";
 import { OtpType } from "src/shared/enums/otp-enum";
 import { LoginDto } from "./dtos/login.dto";
+import { RevokeRefreshTokenDto } from "./dtos/revoke-refresh-token.dto";
 
 @Injectable()
 export class AuthService {
@@ -607,5 +608,45 @@ export class AuthService {
     // Increment attempts
     await this.redis.incr(key);
     await this.redis.expire(key, 3600); // 1 hour
+  }
+
+  /**
+   * Logout / revoke refresh token or device
+   */
+  async logout(
+    dto: RevokeRefreshTokenDto,
+  ): Promise<{ success: boolean; message?: string }> {
+    // If refreshToken provided, find the user who has it and remove it
+    if (dto.refreshToken) {
+      // Find a user which has this token in activity.devices.id
+      const user = await this.userRepository
+        .createQueryBuilder("user")
+        .where(`activity::text LIKE :token`, { token: `%${dto.refreshToken}%` })
+        .getOne();
+
+      if (user) {
+        await this.invalidateRefreshToken(user, dto.refreshToken);
+        return { success: true, message: "Token revoked" };
+      }
+
+      return { success: false, message: "Token not found" };
+    }
+
+    // If deviceId provided, revoke across users (device ids are stored per user)
+    if (dto.deviceId) {
+      // Naive approach: scan users and remove matching device id
+      const users = await this.userRepository.find();
+      for (const u of users) {
+        const has = u.activity?.devices?.some((d) => d.id === dto.deviceId);
+        if (has) {
+          await this.invalidateRefreshToken(u, dto.deviceId);
+          return { success: true, message: "Device revoked" };
+        }
+      }
+
+      return { success: false, message: "Device not found" };
+    }
+
+    return { success: false, message: "No token or device id provided" };
   }
 }

@@ -2,10 +2,10 @@ This repository is a NestJS backend for a multi-vendor marketplace. The goal of 
 
 - Runtime & scripts
   - Use package.json scripts in the project root:
-    - `pnpm/ npm run start:dev` — starts Nest in watch mode (development).
-    - `npm run build` — runs `nest build` to compile to `dist/`.
-    - `npm run start:prod` — runs `node dist/main` for production.
-    - Tests: `npm test`, `npm run test:e2e` (see `test/jest-e2e.json`).
+    - `pnpm start:dev` — starts Nest in watch mode (development).
+    - `pnpm build` — runs `nest build` to compile to `dist/`.
+    - `pnpm start:prod` — runs `node dist/main` for production.
+    - Tests: `pnpm test`, `pnpm test:e2e` (see `test/jest-e2e.json`).
 
 - Entry points and wiring
   - `src/main.ts` — bootstraps Nest, sets global prefix from `process.env.API_PREFIX` (default `api/v1`), validation pipe, global exception filter, CORS, and Swagger (`api/v1/swagger-ui.html`). Look here for request-level middleware, pipe, and filter decisions.
