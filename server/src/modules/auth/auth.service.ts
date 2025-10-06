@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -23,6 +24,8 @@ import { ResetPasswordDto } from "./dtos/reset-password.dto";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -42,6 +45,7 @@ export class AuthService {
       role: UserRole;
     };
   }> {
+    this.logger.log(`Login attempt for email: ${dto.email}`);
     const user = await this.validateUserCredentials(dto.email, dto.password);
 
     // Generate tokens
@@ -474,6 +478,7 @@ export class AuthService {
 
     const isValid = await SecretUtils.compare(password, user.password);
     if (!isValid) {
+      this.logger.warn(`Invalid password attempt for user: ${user.email}`);
       // Increment failed login attempts
       await this.handleFailedLogin(user);
       throw new UnauthorizedException("Invalid email or password");
@@ -481,6 +486,7 @@ export class AuthService {
 
     // Reset lockout on successful login
     await this.handleSuccessfulLogin(user);
+    this.logger.log(`Successful login for user: ${user.email}`);
     return user;
   }
 
@@ -547,7 +553,7 @@ export class AuthService {
       version: user.activity?.loginCount || 0, // Used for invalidating all tokens on password change/logout
     };
     const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: this.configService.get("jwt.refreshTokenExpiration") || "30d", // 30 days
+      expiresIn: this.configService.get("jwt.refreshToken.expiresIn") || "30d", // 30 days
     });
     return refreshToken;
   }

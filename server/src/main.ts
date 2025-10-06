@@ -4,6 +4,7 @@ import { NestFactory } from "@nestjs/core";
 import { Logger, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { HttpExceptionFilter } from "./shared/filters/http-exception.filter";
+import { RequestLoggerMiddleware } from "./shared/middleware/request-logger.middleware";
 import { CorsOptions } from "@nestjs/common/interfaces/external/cors-options.interface";
 
 async function bootstrap() {
@@ -26,6 +27,9 @@ async function bootstrap() {
   };
 
   app.enableCors(corsOptions);
+
+  // Request logging middleware
+  app.use(new RequestLoggerMiddleware().use);
 
   // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
