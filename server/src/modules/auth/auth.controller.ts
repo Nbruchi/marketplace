@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Post, Body, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dtos/login.dto";
@@ -17,7 +10,6 @@ import { RefreshTokenDto } from "./dtos/refresh-token.dto";
 import { VerifyPasswordResetTokenDto } from "./dtos/verify-password-reset-token.dto";
 import { RevokeRefreshTokenDto } from "./dtos/revoke-refresh-token.dto";
 import { Throttle } from "@nestjs/throttler";
-import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -120,7 +112,6 @@ export class AuthController {
   }
 
   @Post("logout")
-  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Logout / revoke refresh token" })
   @ApiResponse({ status: 200, description: "Logged out" })

@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -45,7 +44,6 @@ import { WishlistItem } from "./shared/entities/wishlist-item-entity";
 import { AuthModule } from "./modules/auth/auth.module";
 import { MailModule } from "./modules/mail/mail.module";
 import { format, transports } from "winston";
-import { JwtAuthGuard } from "./shared/guards/jwt-auth.guard";
 import { UsersModule } from "./modules/users/users.module";
 import { CloudinaryModule } from "./modules/cloudinary/cloudinary.module";
 import { WinstonModule } from "nest-winston";
@@ -115,17 +113,42 @@ import bullConfig from "./config/bull-config";
       }),
     }),
     WinstonModule.forRoot({
+      level: process.env.LOG_LEVEL || "debug",
+      format: format.combine(
+        format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+        format.errors({ stack: true }),
+        format.json(),
+        format.prettyPrint(),
+      ),
       transports: [
         new transports.Console({
           format: format.combine(
-            format.timestamp(),
             format.colorize(),
-            format.printf(
-              ({ level, message, timestamp }) =>
-                `[${timestamp}] ${level}: ${message}`,
-            ),
+            format.timestamp({ format: "HH:mm:ss" }),
+            format.printf(({ level, message, timestamp, context, ...meta }) => {
+              const contextStr = context ? `[${context}]` : "";
+              const metaStr =
+                Object.keys(meta).length > 0
+                  ? `\n${JSON.stringify(meta, null, 2)}`
+                  : "";
+              return `${timestamp} ${level} ${contextStr} ${message}${metaStr}`;
+            }),
           ),
         }),
+        // Add file transport for production
+        ...(process.env.NODE_ENV === "production"
+          ? [
+              new transports.File({
+                filename: "logs/error.log",
+                level: "error",
+                format: format.combine(format.timestamp(), format.json()),
+              }),
+              new transports.File({
+                filename: "logs/combined.log",
+                format: format.combine(format.timestamp(), format.json()),
+              }),
+            ]
+          : []),
       ],
     }),
     BullModule.forRootAsync({
@@ -148,12 +171,6 @@ import bullConfig from "./config/bull-config";
     CloudinaryModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}

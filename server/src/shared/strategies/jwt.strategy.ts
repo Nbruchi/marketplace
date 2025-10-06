@@ -6,11 +6,9 @@ import { UserRole } from "../enums/user-enums";
 
 export type JwtPayload = {
   sub: string;
-  fullNames: string;
-  email?: string;
-  phone: string;
+  email: string;
   role: UserRole;
-  isVerified: boolean;
+  type: string;
 };
 
 @Injectable()
@@ -30,11 +28,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     return {
       sub: payload.sub,
-      fullNames: payload.fullNames,
       email: payload.email,
-      phone: payload.phone,
       role: payload.role,
-      isVerified: payload.isVerified,
+      type: payload.type,
     };
   }
 }
